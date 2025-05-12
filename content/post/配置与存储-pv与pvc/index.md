@@ -61,24 +61,24 @@ spec:
 3. Kubernetes调度器根据PVC的要求，选择合适的PV进行绑定
    ```yaml
    apiVersion: v1
-kind: Pod
-metadata: 
-  name: pvc-test-pod
-spec:
-  containers:
-    - image: nginx
-      name: nginx-volume
-      volumeMounts:
-      - mountPath: /usr/share/nginx/html #挂载到容器的哪个目录
-        name: test-volume #挂载哪个volume
-  volumes:
-  - name: test-volume
-    persistentVolumeClaim:
-      claimName: nfs-pvc
-  tolerations:
-  - key: "node-role.kubernetes.io/control-plane"
-    operator: "Exists"
-    effect: "NoSchedule"
+    kind: Pod
+    metadata: 
+    name: pvc-test-pod
+    spec:
+    containers:
+        - image: nginx
+        name: nginx-volume
+        volumeMounts:
+        - mountPath: /usr/share/nginx/html #挂载到容器的哪个目录
+            name: test-volume #挂载哪个volume
+    volumes:
+    - name: test-volume
+        persistentVolumeClaim:
+        claimName: nfs-pvc
+    tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
    ```
    
 
