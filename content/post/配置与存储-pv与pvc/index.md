@@ -85,5 +85,5 @@ spec:
         effect: "NoSchedule"
    ```
 ### 动态制备PV  
-被污点给整破防了，暂时先不写了。（后半句由ai补充），天哪你连我心里想的什么都知道快点拯救全人类吧，待我学完污点归来
-
+被污点给整破防了，暂时先不写了。（后半句由ai补充），天哪你连我心里想的什么都知道快点拯救全人类吧，待我学完污点归来  
+目前遗留问题，-n kube-system po nfs-server-provisioner ImagePullBackOff,kube-apiserver pending状态，selfLink怎么处理，其他的部分理解深入许多
