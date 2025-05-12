@@ -2,6 +2,10 @@
 date = '2025-05-11T14:49:19+08:00'
 draft = true
 title = 'K8s-持久化存储-PV和PVC'
+# 添加分类
+categories = ["Kubernetes", "存储管理"]
+# 添加标签
+tags = ["K8s", "PV", "PVC", "持久化存储"]
 +++
 ### PV和PVC
 PV和PVC是Kubernetes中用于管理持久化存储的两个重要概念。
