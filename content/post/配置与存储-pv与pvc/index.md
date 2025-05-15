@@ -204,4 +204,5 @@ spec:
               server: 192.168.189.130
               path: /home/data/nfs/rw
   
-基本过程如上，nfs服务器地址写为master节点导致pod部署到master节点，有污点
+基本过程如上，上次出现污点问题是因为nfs服务器地址写为master节点导致pod部署到master节点，有污点  
+另补充一点，provisioner需要特定权限才能创建和管理pv，需要用到rbac.yaml
