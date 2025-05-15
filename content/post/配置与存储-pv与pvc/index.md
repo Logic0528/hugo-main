@@ -86,4 +86,122 @@ spec:
    ```
 ### 动态制备PV  
 被污点给整破防了，暂时先不写了。（后半句由ai补充），天哪你连我心里想的什么都知道快点拯救全人类吧，待我学完污点归来  
-目前遗留问题，-n kube-system po nfs-server-provisioner ImagePullBackOff,kube-apiserver pending状态，selfLink怎么处理，其他的部分理解深入许多
+目前遗留问题，-n kube-system po nfs-server-provisioner ImagePullBackOff,kube-apiserver pending状态，selfLink怎么处理，其他的部分理解深入许多  
+
+好的，了解到主节点上默认会有污点，目的是为了保护主节点资源，防止普通pod调
+#### 动态制备pv 
+##### 创建storageclass
+- 定义存储类型
+- 指定Provisioner
+- 设置存储参数
+  ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: managed-nfs-storage
+  provisioner: fuseim.pri/ifs #外部制备器提供者，编写为提供者的名称
+  parameters:
+    archiveOnDelete: "false" #是否存档
+  reclaimPolicy: Retain #回收策略
+  volumeBindingMode: Immediate #默认为Immediate，表示创建PVC立即进行绑定  
+##### 用户创建pvc
+- 指定存储大小
+- 指定访问模式  
+- 引用storageclass
+  ```yaml
+  cat nfs-sc-statefulset.yaml 
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: nginx-sc
+    labels: 
+      app: nginx-sc
+  spec:
+    type: NodePort
+    ports:
+      - name: web
+        port: 80
+        protocol: TCP
+    selector:
+      app: nginx-sc
+  ---
+  apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: nginx-sc
+  spec:
+    replicas: 1
+      #serverName: "nginx-sc"
+    selector:
+      matchLabels:
+        app: nginx-sc
+    template:
+      metadata:
+        labels:
+          app: nginx-sc
+      spec:
+        containers:
+        - image: nginx
+          name: nginx-sc
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - mountPath: /usr/share/nginx/html
+            name: nginx-sc-test-pvc
+    volumeClaimTemplates:
+      - metadata:
+          name: nginx-sc-test-pvc
+        spec:
+          storageClassName: managed-nfs-storage
+          accessModes:
+          - ReadWriteMany
+          resources:
+            requests:
+              storage: 1Gi
+#####  provisioner创建pv
+- 检测到新建pvc
+- 根据storageclass找到对应的provisioner
+- provisoner创建pv
+  ```yaml
+  cat nfs-provisioner.yaml 
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: nfs-client-provisioner
+    namespace: kube-system
+    labels:
+      app: nfs-client-provisioner
+  spec: 
+    replicas: 1
+    strategy:
+      type: Recreate
+    selector:
+      matchLabels:
+        app: nfs-client-provisioner
+    template:
+      metadata:
+        labels: 
+          app: nfs-client-provisioner
+      spec:
+        
+        serviceAccountName: nfs-client-provisioner
+        containers:
+          - name: nfs-client-provisioner
+            image: quay.io/external_storage/nfs-client-provisioner:v4.0.0
+            volumeMounts:
+              - name: nfs-client-root
+                mountPath: /persistentvolumes
+            env:
+              - name: PROVISIONER_NAME
+                value: fuseim.pri/ifs
+              - name: NFS_SERVER
+                value: 192.168.189.130
+              - name: NFS_PATH
+                value: /home/data/nfs/rw    
+        volumes:
+          - name: nfs-client-root
+            nfs:
+              server: 192.168.189.130
+              path: /home/data/nfs/rw
+  
+基本过程如上，nfs服务器地址写为master节点导致pod部署到master节点，有污点
