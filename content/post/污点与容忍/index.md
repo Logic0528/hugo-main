@@ -2,8 +2,8 @@
 date = '2025-05-15T15:52:46+08:00'
 draft = true
 title = 'K8s-污点与容忍'
-tags = ['K8s','污点'，'容忍']
-categories = ['K8s','污点'，'容忍']
+tags = ['K8s','污点','容忍']
+categories = ['K8s','污点','容忍']
 +++
 ### 污点（Taint）
 #### effect:
