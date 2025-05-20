@@ -34,8 +34,8 @@ k8s-deploy-platform/
     ├── install.sh                 # 安装脚本
     └── deploy.sh                  # 部署脚本
 ```
-#### helm-charts/app-template
-##### Chart.yaml
+### helm-charts/app-template
+#### Chart.yaml
 ```yaml
 apiVersion: v2
 name: app-template
@@ -45,7 +45,7 @@ type: application
 ```
   
   
-##### values.yaml
+#### values.yaml
 ```yaml
 # 应用配置
 name: myapp
@@ -103,7 +103,7 @@ graph LR
     B --> C[ClusterIP Service]
     C --> D[Pod1]
 ```
-##### templates/deployment.yaml
+#### templates/deployment.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -134,7 +134,7 @@ spec:
         {{- end }}
 ```
 deployment.yaml这样配置可以根据values.yaml中的配置动态生成deployment资源，相当于values.yaml定义变量，方便修改
-##### templates/service.yaml
+#### templates/service.yaml
 ```yaml
 apiVersion: v1
 kind: Service
@@ -149,7 +149,7 @@ spec:
   selector:
     app: {{ .Values.name }}
 ```
-#### templates/ingress.yaml
+### templates/ingress.yaml
 ```yaml
 {{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
@@ -171,8 +171,8 @@ spec:
                   number: {{ .Values.service.port }}
 {{- end }}
 ```
-#### manifests
-##### applications/app-template.yaml
+### manifests
+#### applications/app-template.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -202,9 +202,9 @@ spec:
           periodSeconds: {{ .Values.healthCheck.period }}
         {{- end }}
 ```
-##### logging/efk-values.yaml
+#### logging/efk-values.yaml
 暂时还不会
-##### monitoring/prometheus-rules.yaml
+#### monitoring/prometheus-rules.yaml
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -231,7 +231,7 @@ spec:
       annotations:
         description: "容器内存使用率超过 80%"
 ```
-##### monitoring/prometheus-values.yaml
+#### monitoring/prometheus-values.yaml
 ```yaml
 prometheus:
   enabled: true
@@ -261,7 +261,7 @@ grafana:
     storageClassName: local-storage
 ```
 grafana实现持久化存储时，需要配置storageClassName，这个storageClassName需要在k8s集群中已经存在，这里使用的是local-storage
-##### monitoring/storageclass.yaml
+#### monitoring/storageclass.yaml
 ```yaml
 class.yaml 
 apiVersion: storage.k8s.io/v1
@@ -271,7 +271,7 @@ metadata:
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: Immediate
 ```
-##### monitoring/pv.yaml
+#### monitoring/pv.yaml
 ```yaml
 apiVersion: v1
 kind: PersistentVolume
@@ -300,7 +300,76 @@ spec:
 - 这里的path需要创建好，否则会报错
 - nodeAffinity是为了保证grafana的数据不会被其他节点的pod所使用，就一个工作节点所以没写，master节点上一般会有污点，最好调度到工作节点上  
   
-    
+### scripts
+#### install.sh
+```bash
+# filepath: scripts/setup-cluster.sh
+#!/bin/bash
+
+# 启动本地集群
+start_cluster() {
+    echo "Starting minikube cluster..."
+    minikube start --driver=docker \
+        --memory=4096 \
+        --cpus=2 \
+        --kubernetes-version=v1.24.0
+}
+
+# 安装必要的组件
+install_components() {
+    # 添加 Helm 仓库
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo add elastic https://helm.elastic.co
+    helm repo update
+}
+
+# 创建必要的命名空间
+create_namespaces() {
+    kubectl create namespace monitoring
+    kubectl create namespace logging
+    kubectl create namespace applications
+}
+
+main() {
+    start_cluster
+    install_components
+    create_namespaces
+}
+
+main "$@"
+```
+#### deploy.sh
+```bash
+#!/bin/bash
+
+# 设置变量
+APP_NAME=$1
+IMAGE=$2
+NAMESPACE=${3:-applications}
+REPLICAS=${4:-1}
+
+# 验证输入
+if [ -z "$APP_NAME" ] || [ -z "$IMAGE" ]; then
+    echo "Usage: $0 <app-name> <image> [namespace] [replicas]"
+    exit 1
+fi
+
+# 部署应用
+deploy_application() {
+    echo "Deploying $APP_NAME..."
+    helm upgrade --install $APP_NAME ./helm-charts/app-template \
+        --namespace $NAMESPACE \
+        --set name=$APP_NAME \
+        --set image=$IMAGE \
+        --set replicas=$REPLICAS
+}
+
+main() {
+    deploy_application
+}
+
+main "$@"
+```
 项目暂时完成，grafana全是英文暂时不熟练，后续再完善
 
 
