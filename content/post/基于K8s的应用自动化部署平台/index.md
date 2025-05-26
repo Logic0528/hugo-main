@@ -86,6 +86,7 @@ ingress:
 value.yaml中service类型为ClusterIP,clusterip仅在集群内部可以访问，与之对应的是nodeport，nodeport在**所有节点**上开放指定端口（30000-32767）  
 clusterIP让外部访问的方式：  
 可以通过配置ingress  
+
 ```mermaid
 graph LR
     A[外部用户] --> B[Ingress]

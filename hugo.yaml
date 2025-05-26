@@ -172,6 +172,16 @@ params:
             - type: tag-cloud
               params:
                   limit: 10
+                  features:
+                  library:
+                    js:
+                      - mermaid
+                mermaid:
+                  enable: true
+                  theme: default
+                  options:
+                    startOnLoad: true
+                    securityLevel: 'loose'
         page:
             - type: toc
 
