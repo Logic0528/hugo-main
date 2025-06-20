@@ -42,7 +42,8 @@ deployment是管理pod的控制器，service是抽象网络层，三者通过标
 
 ## 3.nginx与负载均衡
 nginx是一款高性能的web服务器，反向代理服务器，负载均衡器
-web服务器： 处理静态资源的请求，直接返回文件内容，性能远超传统服务器  
+web服务器： 处理静态资源的请求，直接返回文件内容，性能远超传统服务器    
+
 反向代理服务器： 将客户端请求转发到后端多个应用服务器如tomcat，隐藏真实服务器地址  
 负载均衡器： 分发客户端请求到多个后端服务器，避免单点过载
 
@@ -54,102 +55,57 @@ weight: 根据权重分配
 ip_hash： 基于客户端IP哈希
 等....深入了解后补充
 
-负载均衡的优点
+nginx反向代理的作用与好处：  
+作用：将用户请求转发到后端服务器，隐藏后端服务器
+好处：
+1.节省公网IP，域名是解析到反向代理服务器，后端服务器不需要配置ip
+2.提高安全性，反向代理对用户不可见，降低直接攻击后端服务器的风险
+3.统一访问入口，反向代理可以代理多个服务器，也就是多个项目，通过域名，将不同的项目转化到不同的后台服务器
+4.提高访问速度，反向代理服务器是在后端的前面，所以他可以将一些静态内容缓存到本地，下一次再有请求的时候直接从本地读取，不会像后端发起请求，加快了响应速度  
 
-#### jekins如何实现扩容
-jenkins 的扩容主要通过 水平扩展（Horizontal Scaling） 和 垂直扩展（Vertical Scaling） 两种方式实现，具体取决于你的 Jenkins 架构（单机版或分布式）。以下是详细方案：
+## 4.k8s中如何将一个服务暴露到外部，有什么区别
+1.nodeport: 在节点上开放一个固定端口，外部流量通过任一节点的该端口转发到该服务，适用于测试环境，内部系统临时暴露
+缺点：端口管理复杂，需要避开暴露的端口，仅支持4层负载均衡，安全性差
+2.ingress： 基于ingress controller实现7层负载均衡
+作用： 提供基于域名的路由规则，实现七层负载均衡，支持路径规则，TLS 加密，基于域名的虚拟主机等功能   
 
-一、单机 Jenkins 扩容
-适用于单节点 Jenkins，提升单个 Master 节点的处理能力。
+区别：
+1.层级不同：nodeport在集群每个节点上暴露端口，ingress在集群外部
+2.负载均衡方式：nodeport基于IPVS实现四层负载均衡，ingress基于Nginx实现七层负载均衡
+3.功能复杂性：nodeport仅支持基本的负载均衡，ingress支持更丰富的功能，如路由规则，TLS 加密，基于域名的虚拟主机等
 
-1. 垂直扩展（Vertical Scaling）
-方式：增加 Jenkins Master 节点的 CPU、内存、磁盘 等资源。
-适用场景：任务量较小，但单个任务资源需求高（如大型构建任务）。
-实现方法：
-物理机：升级硬件配置。
-虚拟机/云主机：调整实例规格（如 AWS EC2 从 t2.medium 升级到 t2.large）。
-容器化部署：调整 Docker/Kubernetes 资源限制（resources.requests/limits）。
-
-2. 优化 Jenkins 配置
-调整 JVM 参数：修改 JENKINS_JAVA_OPTS，增加堆内存（如 -Xmx4g）。
-bash
- 在 Jenkins 启动脚本或 systemd 配置中设置
-JAVA_OPTS="-Xmx4g -Xms2g"
-清理旧数据：定期清理构建历史、日志、无用插件，减少磁盘占用。
-二、分布式 Jenkins 扩容（水平扩展）
-适用于高并发构建场景，通过 Master + Agent 架构 分散负载。
-1. 添加 Jenkins Agent（工作节点）
-原理：Master 负责调度任务，Agent 执行具体构建任务。
-实现方式：
-静态 Agent：手动或通过脚本添加固定节点（物理机/虚拟机）。
-动态 Agent（弹性伸缩）：
-Kubernetes Plugin：在 K8s 集群中自动创建/销毁 Pod 作为 Agent。
-Docker Plugin：按需启动 Docker 容器作为 Agent。
-云平台插件（AWS EC2、Azure VM）：根据负载自动扩缩容云实例。
-
-2. Kubernetes 动态扩缩容（推荐方案）
-步骤：
-安装 Kubernetes Plugin：
-Jenkins → 插件管理 → 安装 Kubernetes Plugin。
-配置 Kubernetes Cloud：
-Jenkins → 系统管理 → 节点管理 → 配置 Kubernetes 集群信息（API 地址、Namespace、认证等）。
-定义 Pod 模板：
-指定 Agent 的容器镜像、资源限制、卷挂载等（示例配置）：
+## 5.dockerfile常用变量，基于nginx镜像做个性化配置
 ```yaml
-containers:
-- name: jnlp
-  image: jenkins/inbound-agent:latest
-  resources:
-    limits:
-      cpu: "1"
-      memory: "2Gi"
+FROM 镜像
+USER 设置运行后续命令的用户
+WORKDIR 设置工作目录
+ENV 设置环境变量
+RUN 执行命令，安装软件或配置环境
+COPY 将本地文件复制到镜像中
+EXPOSE 暴露端口
+ENV 定义环境变量，可在后续命令中使用
+VOLUME 定义匿名卷，用于数据持久化
+
+CMD 设置容器启动时执行的命令
+ENDPOINT 配置容器启动时执行的命令
 ```
-设置自动伸缩规则：
-通过 Jenkins Pipeline 或任务配置指定 label（如 kubernetes）。
-Kubernetes 根据任务队列长度自动创建/删除 Agent Pod。
-效果：
-无任务时：Agent Pod 数为 0，节省资源。
-高并发时：自动创建多个 Agent Pod 并行执行任务。
+基于nginx镜像做个性化设置：
+在同目录下创建nginx.conf 修改nginx配置，docker build -t mynginx:v1
 
-三、高可用（HA）方案
-若需进一步提升可用性，可结合以下策略：
-Master 节点高可用：
-使用 Jenkins 集群（多个 Master + 共享存储，如 NFS 或 S3）。
-容器化部署时，通过 Kubernetes StatefulSet + PVC 持久化数据。
-负载均衡：
-通过 Nginx/HAProxy 代理多个 Jenkins Master。
-备份恢复：
-定期备份 JENKINS_HOME 目录（含配置和任务数据）。
-#### 蓝绿发布，金丝雀发布，灰度发布
-##### 一、金丝雀发布（Canary Release）
-1. 核心原理
-名称来源：类比矿工用金丝雀检测矿井瓦斯，先让小部分用户试用新版本，观察无问题后再逐步扩大范围。
-实现方式：
-将新版本（Canary）与旧版本同时在线，按比例（如 5%→20%→100%）将流量逐步切换到新版本。
-通过监控（错误率、延迟等）判断新版本稳定性，发现问题立即回滚。
+## 6.linux常用命令
+```bash
+whoami 输出当前用户名
+id
+echo $USER
 
-2. 典型场景
-需要验证新功能在真实环境的表现。
-避免全量发布导致的全局故障。
-3. 实现工具
-Kubernetes：通过 Ingress（如 Nginx Ingress 的 canary 注解）或 Service Mesh（如 Istio 的流量拆分）。
-示例（Istio 配置）：
-```yaml
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: my-app
-spec:
-  hosts:
-    - my-app.example.com
-  http:
-    - route:
-        - destination:
-            host: my-app
-            subset: v1  # 旧版本
-          weight: 90    # 90%流量
-        - destination:
-            host: my-app
-            subset: v2  # 新版本（金丝雀）
-          weight: 10    # 10%流量
- ```
+uptime 查看系统负载和运行时间
+free 查看内存使用情况
+df -h 查看磁盘空间使用情况
+ps aux 查看进程信息
+netstat -tlnp 查看网络连接情况
+lsblk 查看磁盘总容量及使用情况
+dd 测试读写速率
+iostat 磁盘整体读写速率
+lscpu 查看有多少个cpu
+top 实时监控内存及进程占用
+```
