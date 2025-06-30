@@ -25,7 +25,6 @@ sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 ```
 
 ```bash
-
 # 添加配置文件并加载ipvs模块（kube-proxy使用ipvs模式）
 cat <<EOF | sudo tee /etc/modules-load.d/ipvs.conf
 ip_vs
@@ -51,7 +50,6 @@ sysctl --system
 
 ### 安装前检查
 ```bash
-
 # 执行命令检查selinux状态，输出应为SELinux status：disabled
 sestatus
 
