@@ -159,7 +159,6 @@ systemctl status containerd
 
 ### 安装kubelet,kubeadm,kubectl
 ```bash
-
 # 配置kubernetes 源
 cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -191,4 +190,10 @@ sudo kubeadm init \
 ### 安装flannel网络插件
 ```bash
 wget https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+```
+补充一点，关于权限问题，在master节点上执行下面的命令，配置kubectl的权限
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
