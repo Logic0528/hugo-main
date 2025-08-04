@@ -1,4 +1,4 @@
-+++ date = '2025-07-29T10:28:19+08:00' draft = true title = 'CKA认证'
++++ date = '2025-07-29T10:28:19+08:00' draft = true title = 'CKA认证'+++
 ## CKA认证
 
 
@@ -1493,4 +1493,5 @@ net.netfilter.nf_conntrack_max 设置为 131072
    ```
 
 5. exit退出当前节点
+
 
