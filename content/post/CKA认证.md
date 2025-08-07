@@ -1377,7 +1377,17 @@ Task:
 8. exit退出当前节点
 
 ### 十四.argocd
+```bash
+helm repo add argo https://argoproj.github.io/argo-helm
 
+helm search repo argo | grep argo-cd 
+
+helm template argocd argo/argo-cd --version 5.5.22 --namespace 
+argocd --set crds.install=false > ~/argo-helm.yaml
+
+helm install argocd argo/argo-cd --version 5.5.22 --namespace 
+argocd --set crds.install=false
+```
 ### 十五.etcd修复
 
 题目：
@@ -1497,6 +1507,7 @@ net.netfilter.nf_conntrack_max 设置为 131072
    ```
 
 5. exit退出当前节点
+
 
 
 
