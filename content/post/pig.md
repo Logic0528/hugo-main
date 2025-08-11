@@ -299,28 +299,29 @@ kubectl top pods
 
 ### 七.部署pig项目依赖服务
 
-1. 部署MySQL，使用存储类持久化数据
-   ```bash
-   vim mysql-deploy.yaml
-   
+1. 部署MySQL
+  ```bash
    apiVersion: v1
-   kind: PersistentVolumeClaim
+   kind: Service
    metadata:
-     name: mysql-pvc
+     name: mysql
+     labels:
+       app: mysql
    spec:
-     accessModes:
-     - ReadWriteOnce
-     storageClassName: nfs-storageclass 
-     resources:
-       requests:
-         storage: 10Gi  
+     ports:
+     - port: 3306
+       name: mysql
+     clusterIP: None  # 无头服务，与StatefulSet配合
+     selector:
+       app: mysql
    ---
    apiVersion: apps/v1
-   kind: Deployment
+   kind: StatefulSet
    metadata:
      name: mysql
    spec:
-     replicas: 1
+     serviceName: "mysql"  # 关联上面定义的无头服务
+     replicas: 1  # 可根据需要扩展为多节点
      selector:
        matchLabels:
          app: mysql
@@ -329,40 +330,94 @@ kubectl top pods
          labels:
            app: mysql
        spec:
+         initContainers:
+         - name: init-mysql
+           image: mysql:8.0
+           command:
+           - bash
+           - "-c"
+           - |
+             set -ex
+             # 生成MySQL配置文件
+             cat > /mnt/conf.d/my.cnf << 'EOF'
+             [mysqld]
+             skip-host-cache
+             skip-name-resolve
+             datadir = /var/lib/mysql
+             socket = /var/lib/mysql/mysql.sock
+             pid-file = /var/run/mysqld/mysqld.pid
+             EOF
+             # 为不同实例生成标识文件
+             if [ -z "$(ls -A /var/lib/mysql)" ]; then
+               echo "server-id=1" >> /mnt/conf.d/my.cnf
+             fi
+           volumeMounts:
+           - name: conf
+             mountPath: /mnt/conf.d
+           - name: data
+             mountPath: /var/lib/mysql
+             subPath: mysql
          containers:
          - name: mysql
            image: mysql:8.0
            ports:
            - containerPort: 3306
+             name: mysql
            env:
            - name: MYSQL_ROOT_PASSWORD
-             value: "root"  # 数据库密码，需与pig项目配置一致
+             valueFrom:
+               secretKeyRef:
+                 name: mysql-secret
+                 key: root-password
            - name: MYSQL_DATABASE
-             value: "pig"   # 初始化数据库名
+             value: "pig"
            volumeMounts:
-           - name: mysql-data
+           - name: conf
+             mountPath: /etc/mysql/conf.d
+           - name: data
              mountPath: /var/lib/mysql
+             subPath: mysql
            - name: init-sql
-             mountPath: /docker-entrypoint-initdb.d  # 初始化SQL目录
+             mountPath: /docker-entrypoint-initdb.d
+           livenessProbe:
+             exec:
+               command: ["mysqladmin", "ping", "-u", "root", "-p$(MYSQL_ROOT_PASSWORD)"]
+             initialDelaySeconds: 30
+             periodSeconds: 10
+             timeoutSeconds: 5
+           readinessProbe:
+             exec:
+               command: ["mysql", "-h", "127.0.0.1", "-u", "root", "-p$(MYSQL_ROOT_PASSWORD)", "-e", "SELECT 1"]
+             initialDelaySeconds: 5
+             periodSeconds: 2
+             timeoutSeconds: 1
          volumes:
-         - name: mysql-data
-           persistentVolumeClaim:
-             claimName: mysql-pvc
+         - name: conf
+           emptyDir: {}
          - name: init-sql
            hostPath:
-             path: /root/pig/db  # 指向节点上pig项目的db目录（需确保该目录存在）
+             path: /root/pig/db
+             type: DirectoryOrCreate
+     # 定义PVC模板，StatefulSet会为每个实例创建独立的PVC
+     volumeClaimTemplates:
+     - metadata:
+         name: data
+       spec:
+         accessModes: [ "ReadWriteOnce" ]
+         storageClassName: "nfs-storageclass"
+         resources:
+           requests:
+             storage: 10Gi
    ---
+   # 存储数据库密码的Secret
    apiVersion: v1
-   kind: Service
+   kind: Secret
    metadata:
-     name: mysql-service
-   spec:
-     selector:
-       app: mysql
-     ports:
-     - port: 3306
-       targetPort: 3306
-     clusterIP: None  # 无头服务，适合数据库
+     name: mysql-secret
+   type: Opaque
+   data:
+     root-password: cm9vdA==  # 这里是"root"的base64编码，实际使用应更换为强密码
+   
    ```
 
    部署MySQL
@@ -376,25 +431,26 @@ kubectl top pods
 
 2. 部署redis
    ```bash
-   vim redis-deploy.yaml
-   
    apiVersion: v1
-   kind: PersistentVolumeClaim
+   kind: Service
    metadata:
-     name: redis-pvc
+     name: redis
+     labels:
+       app: redis
    spec:
-     accessModes:
-     - ReadWriteOnce
-     storageClassName: nfs-storageclass
-     resources:
-       requests:
-         storage: 5Gi
+     ports:
+     - port: 6379
+       name: redis
+     clusterIP: None  # 无头服务
+     selector:
+       app: redis
    ---
    apiVersion: apps/v1
-   kind: Deployment
+   kind: StatefulSet
    metadata:
      name: redis
    spec:
+     serviceName: "redis"  # 关联无头服务
      replicas: 1
      selector:
        matchLabels:
@@ -409,25 +465,45 @@ kubectl top pods
            image: redis:7.0
            ports:
            - containerPort: 6379
-           command: ["redis-server", "--requirepass", "redis"]  # 密码与pig配置一致
+             name: redis
+           command: ["redis-server", "--requirepass", "$(REDIS_PASSWORD)"]
+           env:
+           - name: REDIS_PASSWORD
+             valueFrom:
+               secretKeyRef:
+                 name: redis-secret
+                 key: password
            volumeMounts:
-           - name: redis-data
+           - name: data
              mountPath: /data
-         volumes:
-         - name: redis-data
-           persistentVolumeClaim:
-             claimName: redis-pvc
+           livenessProbe:
+             exec:
+               command: ["redis-cli", "-a", "$(REDIS_PASSWORD)", "ping"]
+             initialDelaySeconds: 30
+             periodSeconds: 10
+           readinessProbe:
+             exec:
+               command: ["redis-cli", "-a", "$(REDIS_PASSWORD)", "ping"]
+             initialDelaySeconds: 5
+             periodSeconds: 5
+     volumeClaimTemplates:
+     - metadata:
+         name: data
+       spec:
+         accessModes: [ "ReadWriteOnce" ]
+         storageClassName: "nfs-storageclass"
+         resources:
+           requests:
+             storage: 5Gi
    ---
    apiVersion: v1
-   kind: Service
+   kind: Secret
    metadata:
-     name: redis-service
-   spec:
-     selector:
-       app: redis
-     ports:
-     - port: 6379
-       targetPort: 6379
+     name: redis-secret
+   type: Opaque
+   data:
+     password: cmVkaXM=  # "redis"的base64编码
+   
    ```
 
    部署redis
@@ -1736,6 +1812,7 @@ deploy-quartz:
    ```
 
 2. 查看流水线执行状态
+
 
 
 
