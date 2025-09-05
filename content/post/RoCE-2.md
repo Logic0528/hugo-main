@@ -3,29 +3,24 @@ date = '2025-09-04T11:00:00+08:00'
 draft = 'true'
 title = 'RoCE带宽时延测试'
 +++
-# RoCE带宽时延测试
-
-## 1.测试目的
+## 测试目的
 
 评估 RoCE网卡接口在 RDMA 场景下的性能表现，主要性能指标包括：
 
 - 带宽（Bandwidth）：评估网卡最大吞吐能力
 - 时延（Latency）：衡量数据包往返所需时间
 
-## 2.相关名词概念解释
+## 相关名词概念解释
 
 1. RoCE:RDMA over Converged Ethernet,RDMA技术在以太网上的实现
 2. RDMA:RemoteDirect Memory Access，远程内存直接访问
    1. 面对高性能计算、大数据分析等IO高并发、低时延应用，现有TCP/IP软硬件架构不能满足应用的需求，这主要体现在传统的TCP/IP网络通信是通过内核发送消息，这种通信方式存在很高的数据移动和数据复制的开销。RDMA就是为了解决网络传输中服务器端数据处理的延迟而产生的。如下图，RDMA技术能直接通过网络接口访问内存数据，无需操作系统内核的介入。这允许高吞吐、低延迟的网络通信，尤其适合在大规模并行计算机集群中使用
    2. ![img](https://iqeubg8au73.feishu.cn/space/api/box/stream/download/asynccode/?code=MTc4YTBiYTEzZmY5MzA3MDkzZmFiNjY4ZjhiZjlmNmNfRnA1ZDI5RVVaa3FIaUxPbEc4TFRuQjlETFVlY1lla3pfVG9rZW46V1N1dmJRZFpZb3JlSGJ4TDl0dWNDQWNXbmJnXzE3NTcwMzkxMjE6MTc1NzA0MjcyMV9WNA)
-3. 同轨/异轨：
-   1. 同轨：
-   2. 异轨：
-4. 读操作RDMA Read：客户端从服务端读取数据，服务端被动响应，延迟较低
-5. 写操作RDMA Write：客户端将数据直接写入服务端内存，常用于大数据吞吐
-6. 发送操作RDMA Send：传统网络传输
+3. 读操作RDMA Read：客户端从服务端读取数据，服务端被动响应，延迟较低
+4. 写操作RDMA Write：客户端将数据直接写入服务端内存，常用于大数据吞吐
+5. 发送操作RDMA Send：传统网络传输
 
-## 3.测试前准备
+## 测试前准备
 
 本次测试为单机，选择2个卡打流
 
@@ -37,7 +32,7 @@ title = 'RoCE带宽时延测试'
 3. 网卡IP地址
    1. `# hccn_tool -i id -ip -g root@infra-gpu-npu-011:~# hccn_tool -i 0 -ip -g ipaddr:10.250.45.69 netmask:255.255.255.0 root@infra-gpu-npu-011:~# hccn_tool -i 1 -ip -g ipaddr:10.250.30.30 netmask:255.255.255.0 root@infra-gpu-npu-011:~# hccn_tool -i 8 -ip -g ipaddr:10.250.45.28 netmask:255.255.255.0`
 
-## 4.测试步骤
+## 测试步骤
 
 1. 在接收端执行**hccn_tool -i id -roce_test type [-d %s] [-s %d] [-a] [-b] [-f %d] [-D %d] [-l %d] [-m %d] [-ib %d] [-p %d] [-q %d] [-Q %d] [-t %d] [-u %d] [-V] [-x %d][-n %d] [-tclass %d] -tcp**命令，进入等待连接状态
 2. 在发送端执行**hccn_tool -i id -roce_test type [-d %s] [-s %d] [-a] [-b] [-f %d] [-D %d] [-l %d] [-m %d] [-ib %d] [-p %d] [-q %d] [-Q %d] [-t %d] [-u %d] [-V] [-x %d][-n %d] [-tclass %d] address ipaddr -tcp**命令
@@ -202,5 +197,6 @@ BW average【MB/sec】基本稳定在23360MB/sec
 
 - 2MB 消息：消息大，但每秒能处理的条数少 → MsgRate 低
 - 1MB 消息：消息小，处理条数多 → MsgRate 高。但是带宽未必更高，因为虽然消息数多了，单条消息小了，总吞吐量可能差不多，甚至更低
+
 
 - -n：指定迭代次数
