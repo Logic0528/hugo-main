@@ -25,12 +25,16 @@ title = 'RoCE带宽时延测试'
 本次测试为单机，选择2个卡打流
 
 1. 网卡信息，NPU机器除了业务口的网卡，其他的只能通过hccn_tool操作
-   1. `for i in {0..15}; do    echo "=== Device $i ==="    hccn_tool -i $i -link -g 2>/dev/null    hccn_tool -i $i -ip -g 2>/dev/null    echo done # 一共有16张HCCN网卡`
+   ```bash
+   for i in {0..15}; do    echo "=== Device $i ==="    hccn_tool -i $i -link -g 2>/dev/null    hccn_tool -i $i -ip -g 2>/dev/null    echo done # 一共有16张HCCN网卡
+   ```
 2. 网卡节点信息
    1.   执行下面这个命令，system name tlv相同的两个设备是同轨，不同的是异轨
-   2. `#!/bin/bash for i in {0..15}; do    echo "Interface $i:"    hccn_tool -i $i -lldp -g | grep "System Name TLV" -A 1    echo done # 输出如下： Interface 0: System Name TLV        SH-YS2-M203-J12U28-H3CS9825-G0-04001 Interface 1: System Name TLV        SH-YS2-M203-J12U33-H3CS9825-G0-03001 Interface 2: System Name TLV        SH-YS2-M203-J12U43-H3CS9825-G0-01001 # .....省略 Interface 8: System Name TLV        SH-YS2-M203-J12U33-H3CS9825-G0-03001 Interface 9: System Name TLV        SH-YS2-M203-J12U28-H3CS9825-G0-04001`
+   2. ```bash
+      #!/bin/bash for i in {0..15}; do    echo "Interface $i:"    hccn_tool -i $i -lldp -g | grep "System Name TLV" -A 1    echo done # 输出如下： Interface 0: System Name TLV        SH-YS2-M203-J12U28-H3CS9825-G0-04001 Interface 1: System Name TLV        SH-YS2-M203-J12U33-H3CS9825-G0-03001 Interface 2: System Name TLV        SH-YS2-M203-J12U43-H3CS9825-G0-01001 # .....省略 Interface 8: System Name TLV        SH-YS2-M203-J12U33-H3CS9825-G0-03001 Interface 9: System Name TLV        SH-YS2-M203-J12U28-H3CS9825-G0-04001
+      ```
 3. 网卡IP地址
-   1. `# hccn_tool -i id -ip -g root@infra-gpu-npu-011:~# hccn_tool -i 0 -ip -g ipaddr:10.250.45.69 netmask:255.255.255.0 root@infra-gpu-npu-011:~# hccn_tool -i 1 -ip -g ipaddr:10.250.30.30 netmask:255.255.255.0 root@infra-gpu-npu-011:~# hccn_tool -i 8 -ip -g ipaddr:10.250.45.28 netmask:255.255.255.0`
+   ```bash# hccn_tool -i id -ip -g root@infra-gpu-npu-011:~# hccn_tool -i 0 -ip -g ipaddr:10.250.45.69 netmask:255.255.255.0 root@infra-gpu-npu-011:~# hccn_tool -i 1 -ip -g ipaddr:10.250.30.30 netmask:255.255.255.0 root@infra-gpu-npu-011:~# hccn_tool -i 8 -ip -g ipaddr:10.250.45.28 netmask:255.255.255.0```
 
 ## 测试步骤
 
@@ -200,3 +204,4 @@ BW average【MB/sec】基本稳定在23360MB/sec
 
 
 - -n：指定迭代次数
+
