@@ -31,10 +31,22 @@ title = 'RoCE带宽时延测试'
 2. 网卡节点信息
    1.   执行下面这个命令，system name tlv相同的两个设备是同轨，不同的是异轨
    2. ```bash
-      #!/bin/bash for i in {0..15}; do    echo "Interface $i:"    hccn_tool -i $i -lldp -g | grep "System Name TLV" -A 1    echo done # 输出如下： Interface 0: System Name TLV        SH-YS2-M203-J12U28-H3CS9825-G0-04001 Interface 1: System Name TLV        SH-YS2-M203-J12U33-H3CS9825-G0-03001 Interface 2: System Name TLV        SH-YS2-M203-J12U43-H3CS9825-G0-01001 # .....省略 Interface 8: System Name TLV        SH-YS2-M203-J12U33-H3CS9825-G0-03001 Interface 9: System Name TLV        SH-YS2-M203-J12U28-H3CS9825-G0-04001
+      #!/bin/bash for i in {0..15}; do    echo "Interface $i:"    hccn_tool -i $i -lldp -g | grep "System Name TLV" -A 1
+      echo done # 输出如下：
+      Interface 0: System Name TLV        SH-YS2-M203-J12U28-H3CS9825-G0-04001
+      Interface 1: System Name TLV        SH-YS2-M203-J12U33-H3CS9825-G0-03001
+      Interface 2: System Name TLV        SH-YS2-M203-J12U43-H3CS9825-G0-01001
+      # .....省略
+      Interface 8: System Name TLV        SH-YS2-M203-J12U33-H3CS9825-G0-03001
+      Interface 9: System Name TLV        SH-YS2-M203-J12U28-H3CS9825-G0-04001
       ```
 3. 网卡IP地址
-   ```bash# hccn_tool -i id -ip -g root@infra-gpu-npu-011:~# hccn_tool -i 0 -ip -g ipaddr:10.250.45.69 netmask:255.255.255.0 root@infra-gpu-npu-011:~# hccn_tool -i 1 -ip -g ipaddr:10.250.30.30 netmask:255.255.255.0 root@infra-gpu-npu-011:~# hccn_tool -i 8 -ip -g ipaddr:10.250.45.28 netmask:255.255.255.0```
+   ```bash
+   # hccn_tool -i id -ip -g
+   root@infra-gpu-npu-011:~# hccn_tool -i 0 -ip -g ipaddr:10.250.45.69 netmask:255.255.255.0
+   root@infra-gpu-npu-011:~# hccn_tool -i 1 -ip -g ipaddr:10.250.30.30 netmask:255.255.255.0
+   root@infra-gpu-npu-011:~# hccn_tool -i 8 -ip -g ipaddr:10.250.45.28 netmask:255.255.255.0
+   ```
 
 ## 测试步骤
 
@@ -193,7 +205,10 @@ BW average【MB/sec】基本稳定在23360MB/sec
 ### 非必选参数解析
 
 - -s：指定msg包的大小，取值范围：1~874736000。单位：B。不加该参数默认值为65536
-  - `root@infra-gpu-npu-011:~# hccn_tool -i 8 -roce_test ib_send_bw -s 1048576 -n 1000 -tclass  132 -tcp  #bytes       #iterations        BW peak[MB/sec]            BW average[MB/sec]          MsgRate[Mpps] 1048576      1000               0.00                       23392.64                    0.023393   root@infra-gpu-npu-011:~# hccn_tool -i 8 -roce_test ib_send_bw -s 2097152 -n 1000 -tclass  132 -tcp  #bytes       #iterations        BW peak[MB/sec]            BW average[MB/sec]          MsgRate[Mpps] 2097152      1000               0.00                       23394.57                    0.011697`
+  ```bash
+  root@infra-gpu-npu-011:~# hccn_tool -i 8 -roce_test ib_send_bw -s 1048576 -n 1000 -tclass  132 -tcp  #bytes       #iterations        BW peak[MB/sec]            BW average[MB/sec]          MsgRate[Mpps] 1048576      1000               0.00                       23392.64                    0.023393
+  root@infra-gpu-npu-011:~# hccn_tool -i 8 -roce_test ib_send_bw -s 2097152 -n 1000 -tclass  132 -tcp  #bytes       #iterations        BW peak[MB/sec]            BW average[MB/sec]          MsgRate[Mpps] 2097152      1000               0.00                       23394.57                    0.011697
+  ```
 
 -s:1048576, 每条消息大小 1MB->2097152, 每条消息大小 2MB; MsgRate[Mpps]:0.23393->0.11697
 
