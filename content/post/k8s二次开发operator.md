@@ -14,8 +14,7 @@ title = 'k8s二次开发operator'
 
 #### 环境配置:go,operator-sdk,wsl+dockerdesktop+k8s
 
-![img](https://iqeubg8au73.feishu.cn/space/api/box/stream/download/asynccode/?code=MzhiM2E5MWFkOGJkOTU2OWI5NDNiZmQzMTMyMDUwNzZfNmxhNkRrWkRQS1EzRUhNVkJRek1HUzU5a0lYMlZYUFRfVG9rZW46QVVDNWJKREVLb3k0UjJ4VGRrcmNJaWN1bkJlXzE3NTkwNTIzNjM6MTc1OTA1NTk2M19WNA)
-
+![output](https://raw.githubusercontent.com/Logic0528/MyImages/main/images/output.png)
 ```Bash
 #安装 Go
 wget https://dl.google.com/go/go1.21.6.linux-amd64.tar.gz
@@ -424,3 +423,4 @@ kubectl get pods
 - **config/samples/cache_v1_memcached.yaml**
 
 CRD的一个实例，在集群里面真的创建的一个对象
+
