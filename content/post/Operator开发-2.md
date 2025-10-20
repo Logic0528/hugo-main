@@ -1,5 +1,5 @@
 +++
-date = '2025-010-20T18:00:00+08:00'
+date = '2025-10-20T18:00:00+08:00'
 draft = 'true'
 title = 'Operator开发-2-定时扩缩容容器'
 +++
@@ -257,5 +257,6 @@ func (r *ScalerReconciler) Reconcile(ctx cont-ext.Context, req ctrl.Request) (ct
 可以看到副本数成功扩容到了三，回到刚才打开的那个窗口看下日志
 
 ![image-20251020161743958](https://raw.githubusercontent.com/Logic0528/MyImages/main/images/image-20251020161743958.png)
+
 
 成功！
