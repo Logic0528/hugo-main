@@ -260,3 +260,4 @@ func (r *ScalerReconciler) Reconcile(ctx cont-ext.Context, req ctrl.Request) (ct
 
 
 成功！
+
